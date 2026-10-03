@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     # See app/core/logging.py.
     log_level: str = "INFO"
 
+    # Where PostgreSQL lives. Format:
+    # postgresql+psycopg2://<user>:<password>@<host>:<port>/<database>
+    # The default below points at a local Postgres instance — fine for
+    # development, never used as-is in production (a real deployment
+    # sets DATABASE_URL via its own environment, pointing at a managed
+    # database, never hardcoded here).
+    database_url: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/enterprise_ai_platform"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
