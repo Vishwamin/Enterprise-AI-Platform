@@ -1,12 +1,18 @@
 """
 Tests against the real Postgres database (via the `db_session` fixture
 in conftest.py), proving the schema from
-alembic/versions/0001_create_organizations_and_users.py actually
-enforces what we expect — not just that the Python classes exist.
+alembic/versions/0001_create_organizations_and_users.py and
+alembic/versions/0002_add_password_hash_to_users.py actually enforces
+what we expect — not just that the Python classes exist.
 
 `db_session.flush()` sends pending changes to Postgres (so constraints
 are checked) WITHOUT committing — everything is rolled back by the
 fixture when the test ends. See the Phase 3 lesson on transactions.
+
+Note: every User() here now includes password_hash — it became a
+required (NOT NULL) column in Phase 4's migration. This is a real
+example of a schema change breaking existing tests until they're
+updated to match — exactly what happened when Phase 4 was first built.
 """
 
 import pytest
@@ -14,13 +20,22 @@ from sqlalchemy.exc import IntegrityError
 
 from app.db.models import Organization, User
 
+# Not a real bcrypt hash — these tests only care about the NOT NULL /
+# FK / unique constraints, not about login, so any non-null string works.
+FAKE_HASH = "not-a-real-hash"
+
 
 def test_create_organization_and_user(db_session):
     org = Organization(name="Acme Co")
     db_session.add(org)
     db_session.flush()  # org.id is now assigned by Postgres
 
-    user = User(email="alice@acme.example", name="Alice", organization_id=org.id)
+    user = User(
+        email="alice@acme.example",
+        name="Alice",
+        organization_id=org.id,
+        password_hash=FAKE_HASH,
+    )
     db_session.add(user)
     db_session.flush()
 
@@ -33,7 +48,12 @@ def test_create_organization_and_user(db_session):
 def test_foreign_key_rejects_nonexistent_organization(db_session):
     # No organization with this id exists — the database itself
     # (not our Python code) must reject this insert.
-    user = User(email="ghost@nowhere.example", name="Ghost", organization_id=999_999)
+    user = User(
+        email="ghost@nowhere.example",
+        name="Ghost",
+        organization_id=999_999,
+        password_hash=FAKE_HASH,
+    )
     db_session.add(user)
 
     with pytest.raises(IntegrityError):
@@ -45,9 +65,13 @@ def test_email_must_be_unique(db_session):
     db_session.add(org)
     db_session.flush()
 
-    db_session.add(User(email="dup@dup.example", name="First", organization_id=org.id))
+    db_session.add(
+        User(email="dup@dup.example", name="First", organization_id=org.id, password_hash=FAKE_HASH)
+    )
     db_session.flush()
 
-    db_session.add(User(email="dup@dup.example", name="Second", organization_id=org.id))
+    db_session.add(
+        User(email="dup@dup.example", name="Second", organization_id=org.id, password_hash=FAKE_HASH)
+    )
     with pytest.raises(IntegrityError):
         db_session.flush()

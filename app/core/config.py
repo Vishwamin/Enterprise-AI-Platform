@@ -33,6 +33,18 @@ class Settings(BaseSettings):
     # database, never hardcoded here).
     database_url: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/enterprise_ai_platform"
 
+    # Signs and verifies JWTs (Phase 4). UNLIKE every other default in this
+    # file, this one is NOT safe to leave as-is — anyone who knows this
+    # value can forge valid tokens for ANY user. The default below only
+    # exists so the app boots out-of-the-box for learning; real deployments
+    # MUST override it via a real .env with a long random value, e.g.:
+    #   python -c "import secrets; print(secrets.token_hex(32))"
+    secret_key: str = "dev-only-insecure-secret-change-me"
+
+    # How long an access token stays valid before the client must log in
+    # again (no refresh tokens yet — see PHASE.md for why that's deferred).
+    access_token_expire_minutes: int = 30
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

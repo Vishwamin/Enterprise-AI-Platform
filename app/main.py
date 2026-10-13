@@ -21,7 +21,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.api.v1 import ask, health
+from app.api.v1 import ask, auth, health
 from app.core.config import settings
 from app.core.logging import configure_logging
 
@@ -30,14 +30,15 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Enterprise AI Knowledge Platform",
-    version="0.2.0",
+    version="0.4.0",
 )
 
 # Infra endpoints: GET /health, GET /  (unversioned)
 app.include_router(health.router)
 
-# Versioned API endpoints: POST /api/v1/ask
+# Versioned API endpoints
 app.include_router(ask.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
 
 
 @app.exception_handler(Exception)

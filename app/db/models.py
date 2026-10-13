@@ -46,6 +46,10 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
+    # Phase 4. NEVER the plain password — see app/core/security.py.
+    # This is the bcrypt output (~60 chars), not a secret we read back out.
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+
     # The foreign key: this column must contain a value that exists as
     # an `id` in the organizations table, or the database rejects the
     # insert (see Phase 3 lesson, checkpoint question 2).
